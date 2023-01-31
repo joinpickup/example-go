@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  database:
+    image: "postgres:latest"
+    ports:
+      - 5000:5432
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: pickup123
+      POSTGRES_DB: example-go
+    volumes: 
+      - db-example-go:/var/lib/postgresql/data
+    networks:
+      - example-go
+volumes:
+  db-example-go:
+    driver: local
+networks:
+  example-go:

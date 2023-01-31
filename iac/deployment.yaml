@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-go
+  namespace: prod
+  labels:
+    app: example-go
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: example-go
+  template:
+    metadata:
+      labels:
+        app: example-go
+    spec:
+      containers:
+      - name: example-go
+        image: joinpickup/example-go:$TAG
+        envFrom:
+        - secretRef:
+            name: example-go
+        env:
+          - name: VERSION
+            value: $VERSION
+          - name: ENV
+            value: prod
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-go
+  namespace: prod
+spec:
+  ports:
+  - port: 6000
+  selector:
+    app: example-go

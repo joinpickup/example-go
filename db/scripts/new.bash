@@ -1,3 +1,8 @@
-echo Please enter the name of the new file
-read name
+while getopts n: flag
+do
+    case "${flag}" in
+        n) name=${OPTARG};;
+    esac
+done
+
 migrate create -ext sql -dir ../migrations -seq $name

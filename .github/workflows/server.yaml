@@ -1,10 +1,9 @@
-name: Build and Deploy
+name: Build and Deploy Server
 
-on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version of the release"
+on: 
+  push:
+    tags:
+      - 'v*.*.*'
 
 env:
   DEPLOYMENT: "example-go"
@@ -23,14 +22,14 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
           images: joinpickup/example-go
-          tags: latest, ${{ github.event.inputs.version }}
-      
+          tags: latest, ${{ github.ref_name }} 
+
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
@@ -45,18 +44,19 @@ jobs:
     needs: push_to_registry
     runs-on: ubuntu-latest
     steps: 
-      - name: checkout master
+      - name: Checkout Master
         uses: actions/checkout@main      
-      - name: install doctl
+      - name: Install Doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: save DigitalOcean kubeconfig with short-lived credentials
+      - name: Save DigitalOcean kubeconfig with short-lived credentials
         run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 $(echo $CLUSTER)
 
-      - name: deploy to DigitalOcean Kubernetes
-        run: sed -e 's|$TAG|${{ github.event.inputs.version }}|g' -e 's|$VERSION|${{ github.event.inputs.version }}|g' $GITHUB_WORKSPACE/iac/deployment.yaml | kubectl apply -f - 
+      - name: Deploy to DigitalOcean Kubernetes
+        run: sed -e 's|$TAG|${{ github.ref_name }}|g' -e 's|$VERSION|${{ github.ref_name }}|g' $GITHUB_WORKSPACE/iac/deployment.yaml | kubectl apply -f -
 
-      - name: verify deployment
+      - name: Verify deployment
         run: kubectl -n prod rollout status deployment/$(echo $DEPLOYMENT)
+
